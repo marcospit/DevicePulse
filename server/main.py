@@ -4,14 +4,34 @@ from fastapi import FastAPI, HTTPException
 
 from server.models import DeviceCheckin
 from server.storage import load_devices, save_devices
+from server.services.compliance import evaluate_compliance
 from server.services.device_status import get_device_status
 
 
 app = FastAPI(
     title="DevicePulse API",
     description="Lightweight endpoint monitoring and inventory system.",
-    version="0.2.0",
+    version="0.3.0",
 )
+
+
+def enrich_device(device: dict) -> dict:
+    device_data = device.copy()
+
+    last_checkin = device_data.get("last_checkin")
+
+    if last_checkin:
+        device_data["status"] = get_device_status(
+            last_checkin
+        )
+    else:
+        device_data["status"] = "unknown"
+
+    device_data["compliance"] = evaluate_compliance(
+        device_data
+    )
+
+    return device_data
 
 
 @app.get("/health")
@@ -46,21 +66,10 @@ def device_checkin(device: DeviceCheckin):
 def list_devices():
     devices = load_devices()
 
-    result = []
-
-    for device in devices.values():
-        device_data = device.copy()
-
-        last_checkin = device_data.get("last_checkin")
-
-        if last_checkin:
-            device_data["status"] = get_device_status(last_checkin)
-        else:
-            device_data["status"] = "unknown"
-
-        result.append(device_data)
-
-    return result
+    return [
+        enrich_device(device)
+        for device in devices.values()
+    ]
 
 
 @app.get("/api/v1/devices/{hostname}")
@@ -75,13 +84,4 @@ def get_device(hostname: str):
             detail=f"Device '{hostname}' not found.",
         )
 
-    device_data = device.copy()
-
-    last_checkin = device_data.get("last_checkin")
-
-    if last_checkin:
-        device_data["status"] = get_device_status(last_checkin)
-    else:
-        device_data["status"] = "unknown"
-
-    return device_data
+    return enrich_device(device)
