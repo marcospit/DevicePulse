@@ -4,11 +4,13 @@ from fastapi import FastAPI, HTTPException
 
 from server.models import DeviceCheckin
 from server.storage import load_devices, save_devices
+from server.services.device_status import get_device_status
+
 
 app = FastAPI(
     title="DevicePulse API",
     description="Lightweight endpoint monitoring and inventory system.",
-    version="1.0.0",
+    version="0.2.0",
 )
 
 
@@ -42,7 +44,23 @@ def device_checkin(device: DeviceCheckin):
 
 @app.get("/api/v1/devices")
 def list_devices():
-    return load_devices()
+    devices = load_devices()
+
+    result = []
+
+    for device in devices.values():
+        device_data = device.copy()
+
+        last_checkin = device_data.get("last_checkin")
+
+        if last_checkin:
+            device_data["status"] = get_device_status(last_checkin)
+        else:
+            device_data["status"] = "unknown"
+
+        result.append(device_data)
+
+    return result
 
 
 @app.get("/api/v1/devices/{hostname}")
@@ -51,10 +69,19 @@ def get_device(hostname: str):
 
     device = devices.get(hostname)
 
-    if not device:
+    if device is None:
         raise HTTPException(
             status_code=404,
-            detail="Device not found.",
+            detail=f"Device '{hostname}' not found.",
         )
 
-    return device
+    device_data = device.copy()
+
+    last_checkin = device_data.get("last_checkin")
+
+    if last_checkin:
+        device_data["status"] = get_device_status(last_checkin)
+    else:
+        device_data["status"] = "unknown"
+
+    return device_data
