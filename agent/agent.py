@@ -1,9 +1,13 @@
+import time
+
 import requests
 
 from agent.collectors import get_device_info
 
 
 API_URL = "http://127.0.0.1:8000/api/v1/devices/checkin"
+
+HEARTBEAT_INTERVAL = 60
 
 
 def send_checkin():
@@ -29,5 +33,24 @@ def send_checkin():
         )
 
 
+def run_agent():
+    print("[DevicePulse] Agent started.")
+    print(
+        f"[DevicePulse] Heartbeat interval: "
+        f"{HEARTBEAT_INTERVAL}s"
+    )
+
+    try:
+        while True:
+            send_checkin()
+
+            time.sleep(
+                HEARTBEAT_INTERVAL
+            )
+
+    except KeyboardInterrupt:
+        print("\n[DevicePulse] Agent stopped.")
+
+
 if __name__ == "__main__":
-    send_checkin()
+    run_agent()
