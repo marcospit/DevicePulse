@@ -1,0 +1,19 @@
+{
+    "EXAMPLE-PC": {
+        "hostname": "EXAMPLE-PC",
+        "username": "john.doe",
+        "operating_system": "Windows",
+        "os_version": "10.0.26100",
+        "os_release": "11",
+        "architecture": "AMD64",
+        "processor": "Example Processor",
+        "logical_cpus": 8,
+        "physical_cpus": 4,
+        "ram_gb": 16.0,
+        "disk_total_gb": 512.0,
+        "disk_free_gb": 250.0,
+        "ip_address": "192.168.1.100",
+        "uptime_hours": 12.5,
+        "last_checkin": "2026-09-14T14:00:00+00:00"
+    }
+}
